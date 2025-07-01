@@ -1,0 +1,51 @@
+name: "Gosec Security Scan"
+
+# Run workflow each time code is pushed to your repository and on a schedule.
+# The scheduled workflow runs every Sunday at 01:00 UTC (different from Scorecard)
+on:
+  push:
+    branches: [ main ]
+  schedule:
+  - cron: '0 1 * * 0'
+  
+  # Manual trigger
+  workflow_dispatch:
+
+# Explicitly declare permissions to address token-permissions security issue
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  gosec-scan:
+    runs-on: ubuntu-latest
+    # Job-level permissions are kept in addition to workflow-level
+    permissions:
+      security-events: write
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@35e7bc1a94c4df54c5f3f5debd3241b752c65a1a
+        with:
+          # Using a different filename to avoid conflict with Scorecard
+          args: '-no-fail -fmt sarif -out gosec-results.sarif ./...'
+
+      # Upload the results as artifacts
+      - name: "Upload artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gosec SARIF file
+          path: gosec-results.sarif
+          retention-days: 5
+
+      # Upload to GitHub code scanning
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@dcc1a6637b570d406bec5125dce2e2157d914359
+        with:
+          # Using the different filename
+          sarif_file: gosec-results.sarif
+          category: gosec-scan 

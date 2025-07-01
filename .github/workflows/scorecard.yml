@@ -1,0 +1,64 @@
+name: Scorecard
+
+on:
+  # For Branch-Protection check. Only the default branch is supported.
+  branch_protection_rule:
+  # To guarantee Maintained check is occasionally run.
+  schedule:
+    - cron: '20 7 * * 2'
+  push:
+    branches: [ main ]
+  
+  # Manual trigger
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  scorecard:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      # Needed for the action to push results to the scorecard-results branch.
+      contents: write
+      # Needed for GitHub OIDC token for uploading to OSSF API.
+      id-token: write
+      # Needed for GitHub OIDC token for publishing results.
+      actions: read
+      # Needed for GitHub OIDC token to create SARIF files.
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@0993460a0a6aa37c587523e8565d2490e92ca88d
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # Scorecard runs by default on the main branch and uses a public token 
+          # which may lead to rate limiting. See options below to address this.
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          # Public repositories:
+          #   - Publish results to OSSF public instance: `--publish-results`.
+          # Private repositories:
+          #   - Don't publish results: `--publish-results=false`.
+          # Enable local token `--local` (default value).
+          publish_results: true
+
+      # Upload the results as artifacts (optional)
+      - name: "Upload artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: SARIF file
+          path: results.sarif
+          retention-days: 5
+
+      # Upload the results as SARIF for GitHub's code scanning dashboard
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@dcc1a6637b570d406bec5125dce2e2157d914359
+        with:
+          sarif_file: results.sarif 

@@ -1,0 +1,35 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Explicitly declare permissions to address token-permissions security issue
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.1'
+
+    - name: Test
+      run: go test -v -race -coverpkg=. -coverprofile=coverage.txt -covermode=atomic ./...
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@2db07e317924c76f654a414629d71c65876882e2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.txt
