@@ -12,7 +12,7 @@ import (
 func Init(path string) {
 	// Ensure the directory exists
 	dir := filepath.Dir(path)
-	err := os.MkdirAll(dir, 0o755)
+	err := os.MkdirAll(dir, 0o750)
 	switch {
 	case os.IsExist(err):
 		// Directory already exists, no problem
@@ -23,7 +23,7 @@ func Init(path string) {
 	_, err = os.Stat(path)
 	switch {
 	case os.IsNotExist(err):
-		_, createErr := os.Create(path)
+		_, createErr := os.Create(path) // #nosec G304 -- Database path is intentionally controlled by caller
 		if createErr != nil {
 			logger.LogErrorf("@db.Init: Error creating database: %v", createErr)
 		}

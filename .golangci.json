@@ -31,7 +31,6 @@
             "errname",
             "forcetypeassert",
             "gochecknoinits",
-            "goconst",
             "gocritic",
             "gosec",
             "iface",

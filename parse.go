@@ -12,8 +12,7 @@ import (
 var timeType = reflect.TypeOf(time.Time{})
 
 // timeFormatSQLite should ideally be a shared constant within the db package
-const timeFormatSQLiteParse = "2006-01-02 15:04:05.999"
-
+// const timeFormatSQLiteParse = "2006-01-02 15:04:05.999"
 func RowsToSlice[T any](rows Rows) ([]*T, error) {
 	items := make([]*T, 0, len(rows))
 	for _, row := range rows {
@@ -109,22 +108,6 @@ func mapRowToStruct(row Row, dest any) error {
 			int64Value, isInt64 := value.(int64)
 			if isInt64 {
 				fieldValue.SetInt(int64Value)
-				continue
-			}
-
-		case fieldKind == reflect.Int32 && value != nil:
-			// Int32 - try int32 value
-			int32Value, isInt32 := value.(int32)
-			if isInt32 {
-				fieldValue.SetInt(int64(int32Value))
-				continue
-			}
-
-		case fieldKind == reflect.Int32 && value != nil:
-			// Int32 - try int value last
-			intValue, isInt := value.(int)
-			if isInt {
-				fieldValue.SetInt(int64(intValue))
 				continue
 			}
 

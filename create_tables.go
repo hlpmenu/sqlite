@@ -45,7 +45,7 @@ var schema any
 // processStructFields processes fields from a struct type and adds them to the fields slice.
 // It handles embedded structs by recursively processing their fields.
 func processStructFields(structType reflect.Type, fields *[]string) {
-	for i := 0; i < structType.NumField(); i++ {
+	for i := range structType.NumField() {
 		field := structType.Field(i)
 
 		// Skip if marked as go_only
@@ -68,7 +68,7 @@ func processStructFields(structType reflect.Type, fields *[]string) {
 
 		switch columnName {
 		case "created_at", "last_modified", "updated_at", "recorded_at":
-			def := fmt.Sprintf("%s DATETIME DEFAULT (datetime('now'))", columnName)
+			def := columnName + " DATETIME DEFAULT (datetime('now'))"
 			*fields = append(*fields, def)
 			continue
 		}
@@ -82,11 +82,12 @@ func processStructFields(structType reflect.Type, fields *[]string) {
 		defaultVal := field.Tag.Get("default")
 
 		// Decide base column type
-		if jsonb == "true" {
+		switch {
+		case jsonb == "true":
 			columnType = "TEXT"
-		} else if foreignKey != "" {
+		case foreignKey != "":
 			columnType = "TEXT"
-		} else if columnType != "" {
+		case columnType != "":
 			// if user typed "varchar(255)" or so, treat as TEXT
 			up := strings.ToUpper(columnType)
 			if strings.HasPrefix(up, "VARCHAR") {
@@ -95,7 +96,7 @@ func processStructFields(structType reflect.Type, fields *[]string) {
 				columnType = mapped
 			}
 			// otherwise, leave as is (e.g. "BLOB", "TEXT", etc.)
-		} else {
+		default:
 			// Reflect-based
 			goType := field.Type.String()
 			if mapped, ok := goToSQLiteTypeMap[goType]; ok {
@@ -116,7 +117,7 @@ func processStructFields(structType reflect.Type, fields *[]string) {
 			columnDef += " NOT NULL"
 		}
 		if defaultVal != "" {
-			columnDef += fmt.Sprintf(" DEFAULT %s", defaultVal)
+			columnDef += " DEFAULT " + defaultVal
 		}
 
 		// Check if autoincrement is requested
@@ -132,7 +133,7 @@ func processStructFields(structType reflect.Type, fields *[]string) {
 				)
 			}
 			// Then override the definition
-			columnDef = fmt.Sprintf("%s INTEGER PRIMARY KEY AUTOINCREMENT", columnName)
+			columnDef = columnName + " INTEGER PRIMARY KEY AUTOINCREMENT"
 		}
 
 		*fields = append(*fields, columnDef)
@@ -156,7 +157,7 @@ func generateCreateTableStatement(tableName string, tableStruct any) string {
 }
 
 // CheckAndAddColumns checks for missing columns and adds them to the table
-func CheckAndAddColumns(tableName string, tableStruct interface{}) {
+func CheckAndAddColumns(tableName string, tableStruct any) {
 	t := reflect.TypeOf(tableStruct)
 	existingCols, err := getExistingColumns(tableName)
 	if err != nil {
@@ -200,7 +201,7 @@ func CheckAndAddColumns(tableName string, tableStruct interface{}) {
 			}
 
 			// build definition
-			colDef := ""
+			var colDef string
 			isAutoincrement := false
 
 			switch columnName {
@@ -213,7 +214,8 @@ func CheckAndAddColumns(tableName string, tableStruct interface{}) {
 				foreignKey := field.Tag.Get("foreign_key")
 				autoincrement := field.Tag.Get("autoincrement")
 
-				if autoincrement == "true" {
+				switch {
+				case autoincrement == "true":
 					// ensure it's actually int or int64
 					fieldKind := field.Type.Kind()
 					if fieldKind != reflect.Int && fieldKind != reflect.Int64 {
@@ -224,11 +226,11 @@ func CheckAndAddColumns(tableName string, tableStruct interface{}) {
 					}
 					isAutoincrement = true
 					colDef = "INTEGER"
-				} else if jsonb == "true" {
+				case jsonb == "true":
 					colDef = "TEXT"
-				} else if foreignKey != "" {
+				case foreignKey != "":
 					colDef = "TEXT"
-				} else if dbType != "" {
+				case dbType != "":
 					up := strings.ToUpper(dbType)
 					if strings.HasPrefix(up, "VARCHAR") {
 						colDef = "TEXT"
@@ -237,7 +239,7 @@ func CheckAndAddColumns(tableName string, tableStruct interface{}) {
 					} else {
 						colDef = dbType
 					}
-				} else {
+				default:
 					if mapped, ok := goToSQLiteTypeMap[goType]; ok {
 						colDef = mapped
 					} else {
@@ -311,7 +313,7 @@ func InitializeDB() {
 	// reflect on dbTables
 	tables := reflect.TypeOf(schema).Elem()
 
-	var createStatements []string
+	createStatements := make([]string, 0, tables.NumField())
 	var triggerStatements []string // If you want to do updated_at triggers, etc.
 
 	for i := range tables.NumField() {
@@ -327,7 +329,7 @@ func InitializeDB() {
 
 		// build create table statement
 		createSQL := generateCreateTableStatement(tableName, tableStruct)
-		createStatements = append(createStatements, createSQL)
+		createStatements = append(createStatements, createSQL) //nolint:gocritic // appendAssign: intentional
 
 		// If you want triggers for updated_at:
 		// e.g. BEFORE UPDATE triggers that set updated_at = datetime('now')
@@ -355,7 +357,7 @@ func InitializeDB() {
 	}
 
 	// Combine CREATE TABLE statements and trigger statements
-	allStatements := append(createStatements, triggerStatements...)
+	allStatements := append(createStatements, triggerStatements...) //nolint:gocritic // appendAssign: intentional
 	if len(allStatements) == 0 {
 		return
 	}
@@ -369,7 +371,7 @@ func InitializeDB() {
 	log.Printf("InitializeDB: tables created or verified.")
 
 	// Then optionally, check & add columns for each table:
-	for i := 0; i < tables.NumField(); i++ {
+	for i := range tables.NumField() {
 		table := tables.Field(i)
 		tableName := table.Tag.Get("db")
 		if tableName == "" {

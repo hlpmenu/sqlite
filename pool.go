@@ -33,7 +33,7 @@ func newPool(path string) *pool {
 
 		// Enable foreign keys
 		if err := sqlitex.ExecuteTransient(conn, "PRAGMA foreign_keys = ON;", nil); err != nil {
-			conn.Close()
+			conn.Close() //nolint // Error closing connection after failed pragma is not critical
 			return nil
 		}
 
@@ -45,7 +45,7 @@ func newPool(path string) *pool {
 
 // Get returns a connection from the pool
 func (p *pool) Get() *sqlite.Conn {
-	conn := p.pool.Get().(*sqlite.Conn)
+	conn := p.pool.Get().(*sqlite.Conn) //nolint:forcetypeassert // Pool only contains *sqlite.Conn type
 	if conn == nil {
 		return nil
 	}
@@ -73,7 +73,8 @@ func (p *pool) ManualConnect(path string) *sqlite.Conn {
 
 	// Enable foreign keys
 	if err := sqlitex.ExecuteTransient(conn, "PRAGMA foreign_keys = ON;", nil); err != nil {
-		conn.Close()
+		// nosec:G104 -- Error closing connection after failed pragma is not critical
+		conn.Close() //nolint // Error closing connection after failed pragma is not critical
 		return nil
 	}
 	return conn

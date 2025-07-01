@@ -55,8 +55,8 @@ func (d *DB) FreeConn(conn *sqlite.Conn) {
 
 type Rows []Row
 
-func (r Rows) Len() int {
-	return len(r)
+func (r *Rows) Len() int {
+	return len(*r)
 }
 
 func (r *Rows) Add(row Row) {
@@ -98,6 +98,8 @@ func (d *DB) Query(query string, args ...any) (*Rows, error) {
 				row.Set(colName, b)
 			case sqlite.TypeText:
 				row.Set(colName, stmt.ColumnText(i))
+			case sqlite.TypeNull:
+				return fmt.Errorf("NULL value encountered for column %s", colName)
 			default:
 				return fmt.Errorf("unexpected column type for column %s", colName)
 			}
@@ -121,7 +123,7 @@ func (d *DB) Query(query string, args ...any) (*Rows, error) {
 		Args:       args,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query execution failed: %w", err)
 	}
 	return &rows, nil
 }
@@ -176,9 +178,10 @@ func preprocessArgs(args ...any) ([]any, error) {
 		kind := valType.Kind()
 
 		shouldMarshalToJSON := false
-		if kind == reflect.Struct || kind == reflect.Slice {
+		switch kind { //nolint:exhaustive // Only handle specific types, others pass through
+		case reflect.Struct, reflect.Slice:
 			shouldMarshalToJSON = true
-		} else if kind == reflect.Ptr {
+		case reflect.Ptr:
 			// Check if it's a pointer to a struct or slice
 			elemKind := valType.Elem().Kind()
 			if elemKind == reflect.Struct || elemKind == reflect.Slice {
