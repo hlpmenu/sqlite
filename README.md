@@ -1,4 +1,4 @@
-# Argon2id Password Hashing, comparison, and password generation
+# SQLITE
 
 [![Go Reference](https://pkg.go.dev/badge/gopkg.hlmpn.dev/pkg/sqlite.svg)](https://pkg.go.dev/gopkg.hlmpn.dev/pkg/sqlite)
 [![Go Report Card](https://goreportcard.com/badge/gopkg.hlmpn.dev/pkg/argon2password)](https://goreportcard.com/report/gopkg.hlmpn.dev/pkg/sqlite)
