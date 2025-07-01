@@ -1,0 +1,80 @@
+# Ignore editor swap/backup files
+*.swp
+*.swo
+*.swn
+*~
+*.bak
+*.tmp
+
+# Ignore system files (Windows/macOS)
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+
+# Ignore build artifacts
+*.o
+*.out
+*.a
+*.so
+*.lo
+*.la
+
+# Ignore binaries
+*.run
+studdlo-backend  # The compiled Go binary
+
+# Ignore only root-level runtime directories (NOT subdirectories)
+/uploads/
+/temp/
+/generated/
+
+# Don't ignore .gitkeep files
+!.gitkeep
+
+# Ignore only root-level cert.pem and key.pem
+/cert.pem
+/key.pem
+
+# Ignore only specific files
+*.db
+node_modules
+
+env.fish
+env.sh
+# Ensure this is no longer tracked
+server_config.conf
+
+/examples/
+
+# Ignore Air temp build files
+/tmp/
+/test-data/
+
+# File storage
+/storage_files/
+
+.air.toml
+
+
+# Editor configs
+.vscode/
+.cursor
+.cursorignore
+.editorconfig
+.idea/
+.project
+.settings/
+.sublime-project
+.sublime-workspace
+
+
+full-lint.sh
+
+
+
+results.sarif
+gosec-results.sarif
+coverage.txt
+*.sarif
+*.db
