@@ -26,7 +26,7 @@ jobs:
       GO111MODULE: on
     steps:
       - name: Checkout Source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Run Gosec Security Scanner
         uses: securego/gosec@35e7bc1a94c4df54c5f3f5debd3241b752c65a1a
