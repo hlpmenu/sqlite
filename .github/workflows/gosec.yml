@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Gosec Security Scanner
-        uses: securego/gosec@35e7bc1a94c4df54c5f3f5debd3241b752c65a1a
+        uses: securego/gosec@8a5404eabf56aa8ca2fb9e4e8eb526da0a5a8c48
         with:
           # Using a different filename to avoid conflict with Scorecard
           args: '-no-fail -fmt sarif -out gosec-results.sarif ./...'
